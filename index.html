@@ -1,15 +1,155 @@
+
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Snake Game</title>
-  <link rel="stylesheet" href="snake.css">
+    <meta charset="UTF-8">
+    <title>Snake Game</title>
+    <style>
+        body {
+            font-family: monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+            background-color: #111;
+            color: white;
+        }
+        canvas {
+    background-color: #222;
+    border: 2px solid white;
+  }
+  
+
+        #info {
+            margin-bottom: 10px;
+        }
+        #instructions {
+            display: none;
+            margin-top: 10px;
+            background: #f0f0f0;
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+    </style>
 </head>
 <body>
-  <h1>Snake Game</h1>
-  <canvas id="gameCanvas" width="400" height="400"></canvas>
-  <p>Score: <span id="score">0</span></p>
+    <div id="info">
+        <span id="level">Level: 1</span> <br>
+        <span id="score">Score: 0</span> <br>
+        <span id="highscore">Highscore: 0</span> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+        <button onclick="showInstructions()" style="background-color: red; color: white; border: 2px solid white; width: 100px;height: 25px;">Instructions</button>
+        <button onclick="restartGame()" style="background-color: green; color: white; border: 2px solid white; width: 100px;height: 25px;">Restart</button>
+    </div>
 
-  <script src="snake.js"></script>
+    <canvas id="gameCanvas" width="400" height="400" ></canvas>
+
+    <div id="gameOver" style="display:none; color: red; font-size: 20px;">Sorry, game over </div>
+
+    <div id="instructions">
+        <h3>Instructions</h3>
+        <ul>
+            <li>Use arrow keys to move the snake.</li>
+            <li>Eat the red squares to grow and score points.</li>
+            <li>Don't hit the walls or yourself!</li>
+            <li>Game over if snake goes out of bounds.</li>
+        </ul>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        const box = 20;
+        let score = 0;
+        let level = 1;
+        let highScore = localStorage.getItem("highScore") || 0;
+        let snake = [{x: 200, y: 200}];
+        let direction = "RIGHT";
+        let food = {
+            x: Math.floor(Math.random() * 20) * box,
+            y: Math.floor(Math.random() * 20) * box
+        };
+
+        document.getElementById("highscore").textContent = "Highscore: " + highScore;
+
+        document.addEventListener("keydown", dir);
+
+        function dir(event) {
+            if (event.keyCode === 37 && direction !== "RIGHT") direction = "LEFT";
+            else if (event.keyCode === 38 && direction !== "DOWN") direction = "UP";
+            else if (event.keyCode === 39 && direction !== "LEFT") direction = "RIGHT";
+            else if (event.keyCode === 40 && direction !== "UP") direction = "DOWN";
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < snake.length; i++) {
+                ctx.fillStyle = (i === 0) ? "green" : "lightgreen";
+                ctx.fillRect(snake[i].x, snake[i].y, box, box);
+            }
+
+            ctx.fillStyle = "red";
+            ctx.fillRect(food.x, food.y, box, box);
+
+            let headX = snake[0].x;
+            let headY = snake[0].y;
+
+            if (direction === "LEFT") headX -= box;
+            if (direction === "RIGHT") headX += box;
+            if (direction === "UP") headY -= box;
+            if (direction === "DOWN") headY += box;
+
+            if (headX === food.x && headY === food.y) {
+                score++;
+                food = {
+                    x: Math.floor(Math.random() * 20) * box,
+                    y: Math.floor(Math.random() * 20) * box
+                };
+            } else {
+                snake.pop();
+            }
+
+            // Game over if out of bounds
+            if (headX < 0 || headY < 0 || headX >= canvas.width || headY >= canvas.height) {
+                gameOver();
+                return;
+            }
+
+            // Game over if hit itself
+            for (let i = 0; i < snake.length; i++) {
+                if (headX === snake[i].x && headY === snake[i].y) {
+                    gameOver();
+                    return;
+                }
+            }
+
+            let newHead = {x: headX, y: headY};
+            snake.unshift(newHead);
+
+            document.getElementById("score").textContent = "Score: " + score;
+            document.getElementById("level").textContent = "Level: " + level;
+        }
+
+        function gameOver() {
+            clearInterval(game);
+            document.getElementById("gameOver").style.display = "block";
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem("highScore", highScore);
+            }
+        }
+
+        function restartGame() {
+            location.reload();
+        }
+
+        function showInstructions() {
+            const inst = document.getElementById("instructions");
+            inst.style.display = inst.style.display === "none" ? "block" : "none";
+        }
+
+        let game = setInterval(draw, 200);
+    </script>
 </body>
 </html>
